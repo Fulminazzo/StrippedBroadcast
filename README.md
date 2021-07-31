@@ -7,13 +7,13 @@ It also has an API available for any developer to be used.
 ## Commands
 
 The main and only command of StrippedBroadcast is, you guessed it, /sbc (short for /simplebroadcast). Its syntax is: <br />
-- /simplebroadcast <targets> <message>
-<br />
+- /simplebroadcast &lt;targets&gt; &lt;message&gt;
+
 As explained by the Plugin itself when trying to execute the command, the first argument should represent the targets of the broadcast. These could be:
-- all, for every player online in the server;
-- a player, the only user who will see the message;
-- a world, for every player present in that world;
-- a permission ("perm=<permission>"), for any player who has the permission.
+- all, for every player online in the server
+- a player, the only user who will see the message
+- a world, for every player present in that world
+- a permission ("perm=&lt;permission&gt;"), for any player who has the permission
 
 ## Permissions
 
@@ -30,10 +30,16 @@ The class StrippedBroadcast contains the static method `sendStrippedBroadcast`. 
 
 ```sh
 String[] strings = new String[]{"This", "is", "a", "cool", "message"};
-StrippedBroadcast.sendStrippedBroadcast(Bukkit.getOnlinePlayers(), strings);
+StrippedBroadcastEvent.sendStrippedBroadcast(Bukkit.getOnlinePlayers(), strings);
 ```
-<br />
 
 #### StrippedBroadcastEvent
 
 The StrippedBroadcastEvent is an event called anytime a message is sent using the Plugin Command or the Methods. It contains two variables: a list of involved players and the message sent.
+
+```sh
+@EventHandler
+public void onMessageSent(StrippedBroadcastEvent event) {
+    event.getMessage();
+}
+```
