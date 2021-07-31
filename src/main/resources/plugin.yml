@@ -1,0 +1,14 @@
+name: StrippedBroadcast
+author: Fulminazzo
+version: ${project.version}
+description: A simple recration of the plugin RawMsg.
+main: it.fulminazzo.sbc.StrippedBroadcast
+commands:
+  sbc:
+    description: StrippedBroadcast main command
+    permission: sbc.main
+    aliases: [sbc, strippedbroadcast, sbroadcast, strippedbc]
+
+permissions:
+  sbc.main:
+    description: Permission for /sbc
