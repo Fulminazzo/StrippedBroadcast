@@ -10,10 +10,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.util.StringUtil;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public final class StrippedBroadcast extends JavaPlugin implements TabExecutor {
@@ -73,6 +70,18 @@ public final class StrippedBroadcast extends JavaPlugin implements TabExecutor {
     private void sendHelpMessage(CommandSender sender) {
         String pluginName = this.getName();
         sender.sendMessage(parseString(String.format("&e%s &8» &cUsage: /%s <player>/<world>/perm=<permission>/all <message>", pluginName, pluginName.toLowerCase())));
+    }
+
+    public static void sendStrippedBroadcast(Collection<? extends Player> players, String[] strings) {
+        sendStrippedBroadcast(new ArrayList<>(players), strings);
+    }
+
+    public static void sendStrippedBroadcast(Collection<? extends Player> players, List<String> list) {
+        sendStrippedBroadcast(new ArrayList<>(players), list);
+    }
+
+    public static void sendStrippedBroadcast(Collection<? extends Player> players, String message) {
+        sendStrippedBroadcast(new ArrayList<>(players), message);
     }
 
     public static void sendStrippedBroadcast(List<Player> players, String[] strings) {
