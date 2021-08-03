@@ -1,7 +1,7 @@
 # StrippedBroadcast
 
 StrippedBroadcast is a recreation of the Plugin RawMsg (https://www.spigotmc.org/resources/rawmsg.35864/).
-The main purpouse of the Plugin is to send a message in chat just like the command broadcast. However, when sent, the message will not dispose of a prefix and the sender can specify a group of players to send the message to. (Explained in the Command Section.)
+The main purpose of the Plugin is to send a message in chat just like the command broadcast. However, when sent, the message will not dispose of a prefix and the sender can specify a group of players to send the message to. (Explained in the Command Section.)
 It also has an API available for any developer to be used.
 
 ## Commands
