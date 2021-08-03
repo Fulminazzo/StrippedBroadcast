@@ -1,5 +1,7 @@
 package it.fulminazzo.sbc;
 
+import it.fulminazzo.hexcolorsutil.HexColorsUtil;
+import net.md_5.bungee.api.ChatColor;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.command.Command;
@@ -14,7 +16,10 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public final class StrippedBroadcast extends JavaPlugin implements TabExecutor {
+    private static HexColorsUtil hexColorsUtil;
+
     public void onEnable() {
+        hexColorsUtil = new HexColorsUtil();
         getCommand("sbc").setExecutor(this);
         getCommand("sbc").setTabCompleter(this);
     }
@@ -51,15 +56,19 @@ public final class StrippedBroadcast extends JavaPlugin implements TabExecutor {
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         List<String> list = new ArrayList<>();
         if (args.length == 1) {
+            list = Bukkit.getOnlinePlayers().stream().map(HumanEntity::getName).collect(Collectors.toList());
             list.add("all");
             list.add("perm=");
-            list = Bukkit.getOnlinePlayers().stream().map(HumanEntity::getName).collect(Collectors.toList());
             if (StringUtil.copyPartialMatches(args[0], list, new ArrayList<>()).isEmpty())
                 list = Bukkit.getWorlds().stream().map(World::getName).collect(Collectors.toList());
             if (args[0].toLowerCase().startsWith("perm="))
                 list = Bukkit.getPluginManager().getPermissions().stream().map(permission -> "perm=" + permission.getName()).collect(Collectors.toList());
         }
-        if (args.length == 2) list.add("<message>");
+        if (args.length == 2) {
+            if (args[1].startsWith("[")) list.add("[RAINBOW]");
+            list.add("<message>");
+        }
+        if (args.length >= 2) list.addAll(hexColorsUtil.getFormattedHexList(getParsedMessage(Arrays.asList(Arrays.copyOfRange(args, args.length - 1, args.length)))));
         return StringUtil.copyPartialMatches(args[args.length-1], list, new ArrayList<>());
     }
 
@@ -89,15 +98,26 @@ public final class StrippedBroadcast extends JavaPlugin implements TabExecutor {
     }
 
     public static void sendStrippedBroadcast(List<Player> players, List<String> list) {
-        String message = "";
-        for (String string : list) message += parseString(string) + " ";
-        sendStrippedBroadcast(players, message);
+        sendStrippedBroadcast(players, getParsedMessage(list));
     }
 
     public static void sendStrippedBroadcast(List<Player> players, String message) {
+        message = message.replace("  ", " ");
+        if (message.toUpperCase().startsWith("[RAINBOW] ")) {
+            message = hexColorsUtil.parseRainbowEffect(message.substring(10));
+        } else {
+            message = hexColorsUtil.translateHexColorCodes(message);
+        }
+        if (ChatColor.stripColor(message).replace(" ", "").equalsIgnoreCase("")) return;
         StrippedBroadcastEvent event = new StrippedBroadcastEvent(players, message);
         Bukkit.getConsoleSender().sendMessage(message);
         for (Player p : players) p.sendMessage(message);
         Bukkit.getServer().getPluginManager().callEvent(event);
+    }
+    
+    private static String getParsedMessage(List<String> list) {
+        String message = "";
+        for (String string : list) message += parseString(string) + " ";
+        return message.substring(0, message.length() - 1);
     }
 }
