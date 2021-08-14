@@ -1,123 +1,143 @@
 package it.fulminazzo.sbc;
 
 import it.fulminazzo.hexcolorsutil.HexColorsUtil;
+import it.fulminazzo.sbc.Commands.StrippedBroadcastCommand;
+import it.fulminazzo.sbc.CustomEvent.StrippedBroadcastEvent;
+import it.fulminazzo.sbc.Utils.StringsUtil;
+import net.luckperms.api.LuckPerms;
 import net.md_5.bungee.api.ChatColor;
 import org.bukkit.Bukkit;
-import org.bukkit.World;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandSender;
-import org.bukkit.command.TabExecutor;
-import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.util.StringUtil;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
 
-public final class StrippedBroadcast extends JavaPlugin implements TabExecutor {
+public class StrippedBroadcast extends JavaPlugin {
     private static HexColorsUtil hexColorsUtil;
+    private static StringsUtil stringsUtil;
+    private LuckPerms luckPerms;
 
+    /**
+     * The main method of the plugin.
+     * In here we create a new instance for HexColorsUtil and StringUtils
+     * and we get the commands.
+     */
+    @Override
     public void onEnable() {
+        RegisteredServiceProvider<LuckPerms> provider = Bukkit.getServicesManager().getRegistration(LuckPerms.class);
+        if (provider != null) luckPerms = provider.getProvider();
         hexColorsUtil = new HexColorsUtil();
-        getCommand("sbc").setExecutor(this);
-        getCommand("sbc").setTabCompleter(this);
+        stringsUtil = new StringsUtil();
+        getCommand("sbc").setExecutor(new StrippedBroadcastCommand(this));
+        getCommand("sbc").setTabCompleter(new StrippedBroadcastCommand(this));
     }
 
-    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        List<Player> players;
-        if (args.length == 0) {
-            sendHelpMessage(sender);
-            return true;
-        }
-        String firstArg = args[0];
-        if (firstArg.equalsIgnoreCase("all")) {
-            players = new ArrayList<>(Bukkit.getOnlinePlayers());
-        } else if (Bukkit.getPlayer(firstArg) != null) {
-            players = Collections.singletonList(Bukkit.getPlayer(firstArg));
-        } else if (Bukkit.getWorld(firstArg) != null) {
-            players = Bukkit.getWorld(firstArg).getPlayers();
-        } else if (firstArg.toLowerCase().startsWith("perm=")) {
-            String permission = firstArg.substring(5);
-            players = Bukkit.getOnlinePlayers().stream().filter(player -> player.hasPermission(permission)).collect(Collectors.toList());
-        } else {
-            sendHelpMessage(sender);
-            return true;
-        }
-        List<String> arrayList = Arrays.stream(args).filter(string -> !string.equalsIgnoreCase(args[0])).collect(Collectors.toList());
-        if (arrayList.isEmpty()) {
-            sendHelpMessage(sender);
-            return true;
-        }
-        sendStrippedBroadcast(players, arrayList);
-        return true;
-    }
-
-    public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
-        List<String> list = new ArrayList<>();
-        if (args.length == 1) {
-            list = Bukkit.getOnlinePlayers().stream().map(HumanEntity::getName).collect(Collectors.toList());
-            list.add("all");
-            list.add("perm=");
-            if (StringUtil.copyPartialMatches(args[0], list, new ArrayList<>()).isEmpty())
-                list = Bukkit.getWorlds().stream().map(World::getName).collect(Collectors.toList());
-            if (args[0].toLowerCase().startsWith("perm="))
-                list = Bukkit.getPluginManager().getPermissions().stream().map(permission -> "perm=" + permission.getName()).collect(Collectors.toList());
-        }
-        if (args.length == 2) {
-            if (args[1].startsWith("[")) list.add("[RAINBOW]");
-            list.add("<message>");
-        }
-        if (args.length >= 2) list.addAll(hexColorsUtil.getFormattedHexList(getParsedMessage(Arrays.asList(Arrays.copyOfRange(args, args.length - 1, args.length)))));
-        return StringUtil.copyPartialMatches(args[args.length-1], list, new ArrayList<>());
-    }
-
-    private static String parseString(String string) {
-        return string.replace("&", "§");
-    }
-
-    private void sendHelpMessage(CommandSender sender) {
-        String pluginName = this.getName();
-        sender.sendMessage(parseString(String.format("&e%s &8» &cUsage: /%s <player>/<world>/perm=<permission>/all <message>", pluginName, pluginName.toLowerCase())));
-    }
-
+    /**
+     * Sends a formatted broadcast to the given players collection.
+     *
+     * @param players: the targets.
+     * @param strings: the array containing the message.
+     */
     public static void sendStrippedBroadcast(Collection<? extends Player> players, String[] strings) {
         sendStrippedBroadcast(new ArrayList<>(players), strings);
     }
 
+    /**
+     * Sends a formatted broadcast to the given players collection.
+     *
+     * @param players: the targets.
+     * @param list: the list containing the message.
+     */
     public static void sendStrippedBroadcast(Collection<? extends Player> players, List<String> list) {
         sendStrippedBroadcast(new ArrayList<>(players), list);
     }
 
+    /**
+     * Sends a formatted broadcast to the given players collection.
+     *
+     * @param players: the targets.
+     * @param message: the string containing the message.
+     */
     public static void sendStrippedBroadcast(Collection<? extends Player> players, String message) {
         sendStrippedBroadcast(new ArrayList<>(players), message);
     }
 
+    /**
+     * Sends a formatted broadcast to the given players list.
+     *
+     * @param players: the targets.
+     * @param strings: the array containing the message.
+     */
     public static void sendStrippedBroadcast(List<Player> players, String[] strings) {
         sendStrippedBroadcast(players, Arrays.asList(strings));
     }
 
+    /**
+     * Sends a formatted broadcast to the given players list.
+     *
+     * @param players: the targets.
+     * @param list: the list containing the message.
+     */
     public static void sendStrippedBroadcast(List<Player> players, List<String> list) {
-        sendStrippedBroadcast(players, getParsedMessage(list));
+        sendStrippedBroadcast(players, stringsUtil.getParsedMessage(list, true));
     }
 
+    /**
+     * Sends a formatted broadcast to the given players list.
+     *
+     * @param players: the targets.
+     * @param message: the string containing the message.
+     */
     public static void sendStrippedBroadcast(List<Player> players, String message) {
-        message = message.replace("  ", " ");
-        if (message.toUpperCase().startsWith("[RAINBOW] ")) {
-            message = hexColorsUtil.parseRainbowEffect(message.substring(10));
-        } else {
-            message = hexColorsUtil.translateHexColorCodes(message);
-        }
+        message = stringsUtil.parseString(message.replace("  ", " "));
+        if (message.toUpperCase().startsWith("[RAINBOW] ")) message = hexColorsUtil.parseRainbowEffect(message.substring(10));
+        else message = hexColorsUtil.translateHexColorCodes(message);
+
         if (ChatColor.stripColor(message).replace(" ", "").equalsIgnoreCase("")) return;
-        StrippedBroadcastEvent event = new StrippedBroadcastEvent(players, message);
         Bukkit.getConsoleSender().sendMessage(message);
         for (Player p : players) p.sendMessage(message);
+
+        StrippedBroadcastEvent event = new StrippedBroadcastEvent(players, message);
         Bukkit.getServer().getPluginManager().callEvent(event);
     }
-    
-    private static String getParsedMessage(List<String> list) {
-        String message = "";
-        for (String string : list) message += parseString(string) + " ";
-        return message.substring(0, message.length() - 1);
+
+    /**
+     * Checks if LuckPerms was detected by the plugin.
+     *
+     * @return if LuckPerms is enabled or not.
+     */
+    public boolean isLuckPermsEnabled() {
+        return luckPerms != null;
+    }
+
+    /**
+     * Gets an instance of LuckPerms.
+     *
+     * @return the instance.
+     */
+    public LuckPerms getLuckPerms() {
+        return luckPerms;
+    }
+
+    /**
+     * Gets an instance of HexColorsUtil.
+     *
+     * @return the instance.
+     */
+    public HexColorsUtil getHexColorsUtil() {
+        return hexColorsUtil;
+    }
+
+    /**
+     * Gets an instance of StringUtil.
+     *
+     * @return the instance.
+     */
+    public StringsUtil getStringsUtil() {
+        return stringsUtil;
     }
 }

@@ -1,4 +1,4 @@
-package it.fulminazzo.sbc;
+package it.fulminazzo.sbc.CustomEvent;
 
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
