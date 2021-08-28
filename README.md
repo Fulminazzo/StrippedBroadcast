@@ -15,6 +15,21 @@ As explained by the Plugin itself when trying to execute the command, the first 
 - a world, for every player present in that world
 - a permission ("perm=&lt;permission&gt;"), for any player who has the permission
 
+## Expressions
+
+StrippedBroadcast is also able to understand expressions as target. The user will be able to specify certain conditions that will return a list of compatible players.
+Every expression should be expressed in parenthesis, but there is possibility to put more parenthesis inside one.
+Example:
+```
+sbc (world=world_the_nether && (perm=bukkit.* || perm=minecraft.*)) Looks like you are the king of hell![/code]
+```
+
+You will also notice that expressions accept the keywords AND (&&) and OR (||). Their functioning is really simple:
+- in the above example, the OR keyword is used to get every player who has the permission "bukkit.*" or the permission "minecraft.*";
+- the AND keyword is then used to get every player who is in the nether and has one of the two permissions.
+
+Also, the plugin uses Tab Completition, so it will be very helpful at remembering the user to close parenthesis or insert certain keywords.
+
 ## Permissions
 
 The only permission for StrippedBroadcast is "sbc.main", which will allow the user to execute the /sbc command.
