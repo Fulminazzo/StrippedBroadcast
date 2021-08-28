@@ -30,18 +30,18 @@ sbc all [RAINBOW] StrippedBroadcast v1.2 is an amazing plugin!
 
 ## API
 
-I honestly have no idea of how this Plugin API could be implemented, but I'm very curious to see what the developers will be able to create. Anyway, after importing the Plugin into your project, you are ready to begin. Two classes will be of your interest:
+I honestly have no idea of how this Plugin API could be implemented, but I'm very curious to see what the developers will be able to create. Anyway, after importing the Plugin into your project, you are ready to begin. Three classes will be of your interest:
 
-#### StrippedBroadcast
+### StrippedBroadcast
 
-The class StrippedBroadcast contains the static method `sendStrippedBroadcast`. This will send the given message (it can be a string, a list of strings or even an array) to the list of players specified. An example is:
+The StrippedBroadcast class contains the static method `sendStrippedBroadcast`. This will send the given message (it can be a string, a list of strings or even an array) to the list of players specified. An example is:
 
 ```java
 String[] strings = new String[]{"This", "is", "a", "cool", "message"};
 StrippedBroadcastEvent.sendStrippedBroadcast(Bukkit.getOnlinePlayers(), strings);
 ```
 
-#### StrippedBroadcastEvent
+### StrippedBroadcastEvent
 
 The StrippedBroadcastEvent is an event called anytime a message is sent using the Plugin Command or the Methods. It contains two variables: a list of involved players and the message sent.
 
@@ -51,3 +51,27 @@ public void onMessageSent(StrippedBroadcastEvent event) {
     event.getMessage();
 }
 ```
+
+### PlayersUtil
+
+The PlayersUtil class contains all the methods that can be used to get list of players using certain input. Just like the /sbc command, PlayersUtil supports:
+
+`getAllPlayers()` returns a list containing all Online Players.<br>
+`getUserPlayer(CommandSender sender)` returns a list containing the sender of the command (if it is console, il will be null).<br>
+`getPlayerFromName(String playerName)` returns a list containing the Player with the name "playerName".<br>
+`getPlayersFromWorld(String worldName)` returns a list containing all the players in the world "worldName".<br>
+`getPlayersFromPermission(String permission)` returns a list containing all the players with the permission "permission".<br>
+`getOPPlayers()` returns a list containing all the operator players.<br>
+`getPlayersFromGroup(String groupName)` returns a list containing all the players in the LuckPerms group "groupName".<br>
+`getPlayersFromEffect(String effectName, String level)` returns a list containing all the players with effect "effectName" of level "level".<br>
+`getPlayersFromItem(String itemName, String amount)` returns a list containing all the players that have the item "itemName" of amount "amount" in their inventory.<br>
+`getPlayersFromGameMode(String gameModeString)` returns a list containing all the players in gamemode "gameModeString".<br>
+`getPlayersFromMoney(String money)` returns a list containing all the players that have "money" Vault balance.<br>
+
+Also, every method is associated with submethods for each parameter. For example:<br>
+`getPlayersFromEffect(String effectName, String level)`<br>
+can be used as:<br>
+`getPlayersFromEffect(String effectName)` (returns a list of all the players with effect "effectName", despite of the level)<br>
+`getPlayersFromEffect(String effectName, int level)`<br>
+`getPlayersFromEffect(PotionEffectType effect, int level)`<br>
+`getPlayersFromEffect(PotionEffectType effect)`<br>
