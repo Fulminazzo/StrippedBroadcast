@@ -4,7 +4,7 @@ version: ${project.version}
 description: A simple recration of the plugin RawMsg.
 api-version: 1.16
 main: it.fulminazzo.sbc.StrippedBroadcast
-softdepend: [LuckPerms]
+softdepend: [LuckPerms, Vault]
 commands:
   sbc:
     description: StrippedBroadcast main command

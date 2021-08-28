@@ -2,10 +2,11 @@ package it.fulminazzo.sbc;
 
 import it.fulminazzo.hexcolorsutil.HexColorsUtil;
 import it.fulminazzo.sbc.Commands.StrippedBroadcastCommand;
-import it.fulminazzo.sbc.CustomEvent.StrippedBroadcastEvent;
+import it.fulminazzo.sbcAPI.StrippedBroadcastEvent;
 import it.fulminazzo.sbc.Utils.StringsUtil;
 import net.luckperms.api.LuckPerms;
 import net.md_5.bungee.api.ChatColor;
+import net.milkbowl.vault.economy.Economy;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.RegisteredServiceProvider;
@@ -19,17 +20,27 @@ import java.util.List;
 public class StrippedBroadcast extends JavaPlugin {
     private static HexColorsUtil hexColorsUtil;
     private static StringsUtil stringsUtil;
+    private boolean server1_8;
     private LuckPerms luckPerms;
+    private Economy economy;
 
     /**
      * The main method of the plugin.
-     * In here we create a new instance for HexColorsUtil and StringUtils
+     * In here we create a new instance for HexColorsUtil and StringUtils,
      * and we get the commands.
      */
     @Override
     public void onEnable() {
-        RegisteredServiceProvider<LuckPerms> provider = Bukkit.getServicesManager().getRegistration(LuckPerms.class);
-        if (provider != null) luckPerms = provider.getProvider();
+        String version = Bukkit.getBukkitVersion();
+        server1_8 = (!version.contains("1.1") || version.contains("1.1.")) && !version.contains("1.9");
+        if (isPluginEnabled("LuckPerms")) {
+            RegisteredServiceProvider<LuckPerms> luckPermsProvider = Bukkit.getServicesManager().getRegistration(LuckPerms.class);
+            if (luckPermsProvider != null) luckPerms = luckPermsProvider.getProvider();
+        }
+        if (isPluginEnabled("Vault")) {
+            RegisteredServiceProvider<Economy> vaultProvider = Bukkit.getServicesManager().getRegistration(Economy.class);
+            if (vaultProvider != null) economy = vaultProvider.getProvider();
+        }
         hexColorsUtil = new HexColorsUtil();
         stringsUtil = new StringsUtil();
         getCommand("sbc").setExecutor(new StrippedBroadcastCommand(this));
@@ -106,6 +117,24 @@ public class StrippedBroadcast extends JavaPlugin {
     }
 
     /**
+     * Checks if Vault was detected by the plugin.
+     *
+     * @return if Vault is enabled or not.
+     */
+    public boolean isVaultEnabled() {
+        return economy != null;
+    }
+
+    /**
+     * Gets an instance of Vault Economy.
+     *
+     * @return the instance.
+     */
+    public Economy getEconomy() {
+        return economy;
+    }
+
+    /**
      * Checks if LuckPerms was detected by the plugin.
      *
      * @return if LuckPerms is enabled or not.
@@ -139,5 +168,23 @@ public class StrippedBroadcast extends JavaPlugin {
      */
     public StringsUtil getStringsUtil() {
         return stringsUtil;
+    }
+
+    /**
+     * Checks if a plugin is present in the server.
+     *
+     * @return if the plugin is present or not.
+     */
+    public boolean isPluginEnabled(String pluginName) {
+        return Bukkit.getPluginManager().getPlugin(pluginName) != null;
+    }
+
+    /**
+     * Checks if server is 1.8 or below.
+     *
+     * @return true if the server is in 1.8.
+     */
+    public boolean isServer1_8() {
+        return server1_8;
     }
 }

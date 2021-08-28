@@ -2,8 +2,9 @@ package it.fulminazzo.sbc.Commands;
 
 import it.fulminazzo.sbc.StrippedBroadcast;
 import it.fulminazzo.sbc.Utils.StringsUtil;
-import net.luckperms.api.LuckPerms;
 import org.bukkit.Bukkit;
+import org.bukkit.GameMode;
+import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
@@ -15,6 +16,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class StrippedBroadcastCommand implements TabExecutor {
     private final StrippedBroadcast plugin;
@@ -133,20 +135,46 @@ public class StrippedBroadcastCommand implements TabExecutor {
      * @return list: the list.
      */
     public List<String> getInputOptions(String input) {
+        input = input.toLowerCase();
         List<String> list = Bukkit.getOnlinePlayers().stream().map(HumanEntity::getName).collect(Collectors.toList());
         list.add("all");
         list.add("perm=");
         if (plugin.isLuckPermsEnabled()) list.add("group=");
         list.add("world=");
         list.add("player=");
-        if (input.toLowerCase().startsWith("world=")) list.addAll(Bukkit.getWorlds().stream().map(world -> "world=" + world.getName()).collect(Collectors.toList()));
-        if (input.toLowerCase().startsWith("player=")) list.addAll(Bukkit.getOnlinePlayers().stream().map(player -> "player=" + player.getName()).collect(Collectors.toList()));
-        if (input.toLowerCase().startsWith("perm=")) {
+        list.add("item=");
+        list.add("effect=");
+        list.add("gamemode=");
+        if (plugin.isVaultEnabled()) list.add("money=");
+        if (input.startsWith("world=")) list.addAll(Bukkit.getWorlds().stream().map(world -> "world=" + world.getName()).collect(Collectors.toList()));
+        if (input.startsWith("player=")) list.addAll(Bukkit.getOnlinePlayers().stream().map(player -> "player=" + player.getName()).collect(Collectors.toList()));
+        if (input.startsWith("perm=")) {
             list.add("perm=op");
             list.addAll(Bukkit.getPluginManager().getPermissions().stream().map(permission -> "perm=" + permission.getName()).collect(Collectors.toList()));
         }
-        if (input.toLowerCase().startsWith("group=") && plugin.isLuckPermsEnabled()) {
+        if (input.startsWith("group=") && plugin.isLuckPermsEnabled()) {
             list.addAll(plugin.getLuckPerms().getGroupManager().getLoadedGroups().stream().map(group -> "group=" + group.getName().toLowerCase()).collect(Collectors.toList()));
+        }
+        boolean notValidInput = input.replace(",", "").length() != input.length() - 1 && input.replace(",", "").length() != input.length();
+        if (input.startsWith("item=")) {
+            if (notValidInput) return list;
+            if (input.contains(",")) {
+                String finalInput = input;
+                list.addAll(Arrays.stream(new int[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 0}).mapToObj(i -> finalInput + i).collect(Collectors.toList()));
+            } else list.addAll(Arrays.stream(Material.values()).map(m -> "item=" + m.toString().toLowerCase()).collect(Collectors.toList()));
+        }
+        if (input.startsWith("effect=")) {
+            if (notValidInput) return list;
+            if (input.contains(",")) {
+                String finalInput = input;
+                list.addAll(Arrays.stream(new int[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 0}).mapToObj(i -> finalInput + i).collect(Collectors.toList()));
+            } else list.addAll(StringsUtil.getPotionEffects().stream().map(p -> "effect=" + p).collect(Collectors.toList()));
+        }
+        if (input.startsWith("gamemode=")) {
+            list.addAll(Stream.concat(
+                    Arrays.stream(new int[]{0, 1, 2, 3}).mapToObj(String::valueOf),
+                    Arrays.stream(GameMode.values()).map(g -> g.toString().toLowerCase())
+            ).map(s -> "gamemode=" + s).collect(Collectors.toList()));
         }
         return list;
     }

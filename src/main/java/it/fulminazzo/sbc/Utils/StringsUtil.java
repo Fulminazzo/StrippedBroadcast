@@ -1,16 +1,12 @@
 package it.fulminazzo.sbc.Utils;
 
-import it.fulminazzo.sbc.StrippedBroadcast;
+import it.fulminazzo.sbcAPI.PlayersUtil;
 import org.apache.commons.lang.StringUtils;
 import org.bukkit.Bukkit;
-import org.bukkit.World;
 import org.bukkit.entity.Player;
-import org.bukkit.permissions.ServerOperator;
+import org.bukkit.potion.PotionEffectType;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class StringsUtil {
@@ -70,49 +66,53 @@ public class StringsUtil {
     }
 
     /**
-     * Parses a single given command. This should be:
-     * - all (all players);
-     * - me (the player executing the command);
-     * - <player> (a player);
-     * - player=<player> (a player);
-     * - world=<world> (all players of a world);
-     * - perm=<perm> (all players having this permission).
+     * Parses a single given command (for example "all" or "world=world_the_end").
      *
      * @param command: the command string.
-     * @param player: the player that should return with keyword "me".
+     * @param player: the player that should return with keyword "me" (might be null).
      *
      * @return playersList: the list of all valid players according to command.
      */
     public List<Player> parseCommand(String command, Player player) {
-        List<Player> players = null;
         command = command.toLowerCase().replace(" ", "");
-        if (command.equalsIgnoreCase("all")) {
-            players = new ArrayList<>(Bukkit.getOnlinePlayers());
-        } else if (command.equalsIgnoreCase("me")) {
-            if (player != null) players = new ArrayList<>(Collections.singleton(player));
-        } else if (command.replace(" ", "").equalsIgnoreCase("")) {
+        if (command.replace(" ", "").equalsIgnoreCase("")) {
             return null;
+        } else if (command.equalsIgnoreCase("all")) {
+            // "all": returns all the online players.
+            return PlayersUtil.getAllPlayers();
+        } else if (command.equalsIgnoreCase("me")) {
+            // "me": returns the sender of the command (if he is console, it will be null).
+            return PlayersUtil.getUserPlayer(player);
+        } else if (command.equalsIgnoreCase("op")) {
+            // "op": returns every operator in the server.
+            return PlayersUtil.getOPPlayers();
         } else if (command.startsWith("world=")) {
-            World world = Bukkit.getWorld(command.substring(6));
-            if (world != null) players = world.getPlayers();
+            // "world=<world>": returns every player from the world <world>.
+            return PlayersUtil.getPlayersFromWorld(command);
         } else if (command.startsWith("perm=")) {
-            String permission = command.substring(5);
-            players = permission.equalsIgnoreCase("op") ? Bukkit.getOnlinePlayers().stream().filter(ServerOperator::isOp).collect(Collectors.toList()) :
-                    Bukkit.getOnlinePlayers().stream().filter(p -> p.hasPermission(permission)).collect(Collectors.toList());
+            // "perm=<permission>": returns every player from that has permission <permission>.
+            return PlayersUtil.getPlayersFromPermission(command);
         } else if (command.startsWith("group=")) {
-            StrippedBroadcast plugin = StrippedBroadcast.getPlugin(StrippedBroadcast.class);
-            players = new ArrayList<>();
-            if (plugin.isLuckPermsEnabled()) {
-                String group = command.substring(6);
-                players = Bukkit.getOnlinePlayers().stream().filter(p -> p.hasPermission("group." + group)).collect(Collectors.toList());
-            }
-        } else if (command.startsWith("player=")) {
-            String playerName = command.substring(7);
-            if (Bukkit.getPlayer(playerName) != null) players = new ArrayList<>(Collections.singleton(Bukkit.getPlayer(playerName)));
-        } else if (Bukkit.getPlayer(command) != null) {
-            players = new ArrayList<>(Collections.singleton(Bukkit.getPlayer(command)));
+            // Only works with Luck Perms.
+            // "group=<group>": returns every player that is in the group <group>.
+            return PlayersUtil.getPlayersFromGroup(command);
+        } else if (command.startsWith("item=")) {
+            // "item=<item>,<amount>"
+            return command.contains(",") ? PlayersUtil.getPlayersFromItem(command.split(",")[0], command.split(",")[1]) : PlayersUtil.getPlayersFromItem(command);
+        } else if (command.startsWith("effect=")) {
+            // "effect=<effect>,<amount>"
+            return command.contains(",") ? PlayersUtil.getPlayersFromEffect(command.split(",")[0], command.split(",")[1]) : PlayersUtil.getPlayersFromEffect(command);
+        } else if (command.startsWith("gamemode=")) {
+            // "gamemode=<gamemode>"
+            return PlayersUtil.getPlayersFromGameMode(command);
+        } else if (command.startsWith("money=")) {
+            // Only works with Vault.
+            return PlayersUtil.getPlayersFromMoney(command);
+        } else if (command.startsWith("player=") || Bukkit.getPlayer(command) != null) {
+            // "player=<playerName>" or "<playerName>: returns the player called <playerName>
+            return PlayersUtil.getPlayerFromName(command);
         }
-        return players;
+        return null;
     }
 
     /**
@@ -204,9 +204,17 @@ public class StringsUtil {
         return message.substring(0, message.length() - 1);
     }
 
+    /**
+     * Repeats the given character a certain amount of times.
+     *
+     * @param character: the character to repeat.
+     * @param times: the amount of times.
+     *
+     * @return string: a string containing the character repeated "times" times.
+     */
     public String repeat(char character, int times) {
         String string = "";
-        for (int i = 0; i < times; ++i) string = string + character;
+        for (int i = 0; i < times; ++i) string += character;
         return string;
     }
 
@@ -219,5 +227,54 @@ public class StringsUtil {
      */
     public String parseString(String string) {
         return string.replace("&", "§");
+    }
+
+    /**
+     * Gets a list of all potion effect types names.
+     *
+     * @return list: the list.
+     */
+    public static List<String> getPotionEffects() {
+        return Arrays.stream(PotionEffectType.values()).filter(Objects::nonNull).map(PotionEffectType::getName).collect(Collectors.toList());
+    }
+
+    /**
+     * Checks if a string is valid for a general enum.
+     *
+     * @param enums: the enum values.
+     * @param enumName: the enum name.
+     *
+     * @return boolean: if the enumName is contained in the enum values.
+     */
+    public static boolean isValidValue(Object[] enums, String enumName) {
+        return isValidValue(Arrays.asList(enums), enumName);
+    }
+
+    /**
+     * Checks if a string is valid for a general enum.
+     *
+     * @param enums: the enum values.
+     * @param enumName: the enum name.
+     *
+     * @return boolean: if the enumName is contained in the enum values.
+     */
+    public static boolean isValidValue(List<Object> enums, String enumName) {
+        return enums.stream().filter(Objects::nonNull).anyMatch(e -> e.toString().equalsIgnoreCase(enumName));
+    }
+
+    /**
+     * Checks if a string is a double.
+     *
+     * @param string: the string.
+     *
+     * @return boolean: if the string is a double or not.
+     */
+    public static boolean isDouble(String string) {
+        try {
+            Double.parseDouble(string);
+            return true;
+        } catch (NumberFormatException ignored) {
+            return false;
+        }
     }
 }
