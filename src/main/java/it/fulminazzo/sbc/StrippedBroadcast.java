@@ -1,9 +1,11 @@
 package it.fulminazzo.sbc;
 
+import it.fulminazzo.Utils.StringsUtil;
 import it.fulminazzo.hexcolorsutil.HexColorsUtil;
 import it.fulminazzo.sbc.Commands.StrippedBroadcastCommand;
+import it.fulminazzo.sbc.Listeners.PlayerListener;
 import it.fulminazzo.sbcAPI.StrippedBroadcastEvent;
-import it.fulminazzo.sbc.Utils.StringsUtil;
+import it.fulminazzo.sbc.Utils.MessagesUtil;
 import net.luckperms.api.LuckPerms;
 import net.md_5.bungee.api.ChatColor;
 import net.milkbowl.vault.economy.Economy;
@@ -12,17 +14,17 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class StrippedBroadcast extends JavaPlugin {
     private static HexColorsUtil hexColorsUtil;
-    private static StringsUtil stringsUtil;
+    private static MessagesUtil messagesUtil;
     private boolean server1_8;
     private LuckPerms luckPerms;
     private Economy economy;
+    private HashMap<UUID, List<UUID>> broadcastingPlayers;
+    private List<UUID> rainbow;
 
     /**
      * The main method of the plugin.
@@ -42,9 +44,11 @@ public class StrippedBroadcast extends JavaPlugin {
             if (vaultProvider != null) economy = vaultProvider.getProvider();
         }
         hexColorsUtil = new HexColorsUtil();
-        stringsUtil = new StringsUtil();
+        messagesUtil = new MessagesUtil();
+        broadcastingPlayers = new HashMap<>();
+        rainbow = new ArrayList<>();
+        Bukkit.getPluginManager().registerEvents(new PlayerListener(this), this);
         getCommand("sbc").setExecutor(new StrippedBroadcastCommand(this));
-        getCommand("sbc").setTabCompleter(new StrippedBroadcastCommand(this));
     }
 
     /**
@@ -94,7 +98,7 @@ public class StrippedBroadcast extends JavaPlugin {
      * @param list: the list containing the message.
      */
     public static void sendStrippedBroadcast(List<Player> players, List<String> list) {
-        sendStrippedBroadcast(players, stringsUtil.getParsedMessage(list, true));
+        sendStrippedBroadcast(players, StringsUtil.getParsedMessage(list, true));
     }
 
     /**
@@ -104,7 +108,7 @@ public class StrippedBroadcast extends JavaPlugin {
      * @param message: the string containing the message.
      */
     public static void sendStrippedBroadcast(List<Player> players, String message) {
-        message = stringsUtil.parseString(message.replace("  ", " "));
+        message = StringsUtil.parseString(message.replace("  ", " "));
         if (message.toUpperCase().startsWith("[RAINBOW] ")) message = hexColorsUtil.parseRainbowEffect(message.substring(10));
         else message = hexColorsUtil.translateHexColorCodes(message);
 
@@ -114,6 +118,121 @@ public class StrippedBroadcast extends JavaPlugin {
 
         StrippedBroadcastEvent event = new StrippedBroadcastEvent(players, message);
         Bukkit.getServer().getPluginManager().callEvent(event);
+    }
+
+    /**
+     * Checks if a player is in the broadcastingPlayer list.
+     *
+     * @param player: the player.
+     * @return true or false.
+     */
+    public boolean isPlayerBroadcasting(Player player) {
+        return isPlayerBroadcasting(player.getUniqueId());
+    }
+
+    /**
+     * Checks if a player is in the broadcastingPlayer list.
+     *
+     * @param uuid: the player uuid.
+     * @return true or false.
+     */
+    public boolean isPlayerBroadcasting(UUID uuid) {
+        return broadcastingPlayers.containsKey(uuid);
+    }
+
+    /**
+     * Changes the player broadcasting. If he is, then
+     * it will be removed, else it will be added.
+     *
+     * @param player: the player.
+     * @param players: the players to broadcast to.
+     */
+    public void flipPlayerBroadcasting(Player player, List<Player> players) {
+        flipPlayerBroadcasting(player.getUniqueId(), players.stream().map(Player::getUniqueId).collect(Collectors.toList()));
+    }
+
+    /**
+     * Changes the player broadcasting. If he is, then
+     * it will be removed, else it will be added.
+     *
+     * @param uuid: the player uuid.
+     * @param uuids: the players to broadcast to.
+     */
+    public void flipPlayerBroadcasting(UUID uuid, List<UUID> uuids) {
+        if (isPlayerBroadcasting(uuid)) {
+            broadcastingPlayers.remove(uuid);
+            if (isRainbowBroadcast(uuid)) flipRainbowBroadcast(uuid);
+        }
+        else broadcastingPlayers.put(uuid, uuids);
+    }
+
+    /**
+     * Returns a list of players that the player is broadcasting to.
+     * Requires to have done /sbc <players>
+     *
+     * @param player: the player who is broadcasting.
+     *
+     * @return players: the players to broadcast to.
+     */
+    public List<Player> getPlayerBroadcastingPlayers(Player player) {
+        return getPlayerBroadcastingPlayers(player.getUniqueId());
+    }
+
+    /**
+     * Returns a list of players that the player is broadcasting to.
+     * Requires to have done /sbc <players>
+     *
+     * @param uuid: the player uuid who is broadcasting.
+     *
+     * @return players: the players to broadcast to.
+     */
+    public List<Player> getPlayerBroadcastingPlayers(UUID uuid) {
+        if (!isPlayerBroadcasting(uuid)) return new ArrayList<>();
+        return broadcastingPlayers.get(uuid).stream()
+                .filter(u -> Bukkit.getPlayer(u) != null)
+                .map(Bukkit::getPlayer)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Checks if a player is rainbow broadcasting.
+     *
+     * @param player: the player.
+     *
+     * @return true or false.
+     */
+    public boolean isRainbowBroadcast(Player player) {
+        return isRainbowBroadcast(player.getUniqueId());
+    }
+
+    /**
+     * Checks if a player is rainbow broadcasting.
+     *
+     * @param uuid: the player uuid.
+     *
+     * @return true or false.
+     */
+    public boolean isRainbowBroadcast(UUID uuid) {
+        return rainbow.contains(uuid);
+    }
+
+    /**
+     * Flips the player rainbow broadcasting.
+     *
+     * @param player: the player.
+     */
+    public void flipRainbowBroadcast(Player player) {
+        flipRainbowBroadcast(player.getUniqueId());
+    }
+
+    /**
+     * Flips the player rainbow broadcasting.
+     *
+     * @param uuid: the player uuid.
+     */
+    public void flipRainbowBroadcast(UUID uuid) {
+        if (isRainbowBroadcast(uuid)) rainbow.remove(uuid);
+        else rainbow.add(uuid);
     }
 
     /**
@@ -166,8 +285,8 @@ public class StrippedBroadcast extends JavaPlugin {
      *
      * @return the instance.
      */
-    public StringsUtil getStringsUtil() {
-        return stringsUtil;
+    public MessagesUtil getStringsUtil() {
+        return messagesUtil;
     }
 
     /**

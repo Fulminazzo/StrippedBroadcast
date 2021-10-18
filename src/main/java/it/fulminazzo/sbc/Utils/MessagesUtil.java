@@ -1,5 +1,6 @@
 package it.fulminazzo.sbc.Utils;
 
+import it.fulminazzo.Utils.StringsUtil;
 import it.fulminazzo.sbcAPI.PlayersUtil;
 import org.apache.commons.lang.StringUtils;
 import org.bukkit.Bukkit;
@@ -9,7 +10,7 @@ import org.bukkit.potion.PotionEffectType;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class StringsUtil {
+public class MessagesUtil {
     /**
      * Parses the command string the user gives. This should respect the
      * following criteria:
@@ -30,7 +31,7 @@ public class StringsUtil {
         // TODO: Implement errors system?
         List<String> errors = new ArrayList<>();
 
-        String[] subCommandsStrings = getCommandsFromParenthesis(commandString);
+        String[] subCommandsStrings = StringsUtil.getCommandsFromParenthesis(commandString);
         if (subCommandsStrings.length != 0) {
             for (String s : subCommandsStrings) {
                 subCommands.add(s.replace("(", "").replace(")", ""));
@@ -116,120 +117,6 @@ public class StringsUtil {
     }
 
     /**
-     * Creates an array containing every command given in parentheses.
-     * For example: "(world=world || world=world_the_end) && (perm=bukkit.*)"
-     * becomes: ["world=world || world=world_the_end", "perm=bukkit"]
-     *
-     * @param command: the command string.
-     *
-     * @return commands: an array of commands.
-     */
-    public String[] getCommandsFromParenthesis(String command) {
-        int leftPos = -1;
-        int parenthesisCount = 0;
-        List<String> commands = new ArrayList<>();
-        for (int i = 0; i < command.length(); i++) {
-            char c = command.charAt(i);
-            if (c == '(') {
-                parenthesisCount++;
-                if (leftPos == -1) leftPos = i;
-            }
-            if (c == ')') {
-                if (parenthesisCount == 1 && leftPos != -1) {
-                    commands.add(command.substring(leftPos + 1, i));
-                    leftPos = -1;
-                }
-                parenthesisCount--;
-            }
-        }
-        return commands.toArray(new String[0]);
-    }
-
-    /**
-     * Checks if in the given string there is an open parenthesis or not.
-     *
-     * @param string: the string to be checked.
-     *
-     * @return parenthesisCount: the number of open parenthesis.
-     */
-    public Integer isOpenParenthesis(String string) {
-        int parenthesisCount = 0;
-        for (int i = 0; i < string.length(); i++) {
-            char c = string.charAt(i);
-            if (c == '(') parenthesisCount++;
-            if (c == ')') parenthesisCount--;
-        }
-        return parenthesisCount;
-    }
-
-    /**
-     * Removes the parenthesis from beginning and ending of the string.
-     *
-     * @param string: the string to be removed.
-     *
-     * @return string: the string stripped of parenthesis.
-     */
-    public String removeParenthesis(String string) {
-        if (!string.contains("(") && !string.contains(")")) return string;
-        string = string.startsWith("(") ? string.substring(1) : string;
-        string = string.endsWith(")") ? string.substring(0, string.length() - 1) : string;
-        return removeParenthesis(string);
-    }
-
-    /**
-     * Converts a list into a string.
-     *
-     * @param list: the list that should be converted.
-     * @param parseChatColor: enables translation of '&' into '§'
-     *
-     * @return message: the converted string.
-     */
-    public String getParsedMessage(List<String> list, Boolean parseChatColor) {
-        String message = "";
-        for (String string : list) message += (parseChatColor ? parseString(string) : string) + " ";
-        return message.substring(0, message.length() - 1);
-    }
-
-    /**
-     * Converts an array into a string.
-     *
-     * @param strings: the array that should be converted.
-     * @param parseChatColor: enables translation of '&' into '§'
-     *
-     * @return message: the converted string.
-     */
-    public String getParsedMessage(String[] strings, Boolean parseChatColor) {
-        String message = "";
-        for (String string : strings) message += (parseChatColor ? parseString(string) : string) + " ";
-        return message.substring(0, message.length() - 1);
-    }
-
-    /**
-     * Repeats the given character a certain amount of times.
-     *
-     * @param character: the character to repeat.
-     * @param times: the amount of times.
-     *
-     * @return string: a string containing the character repeated "times" times.
-     */
-    public String repeat(char character, int times) {
-        String string = "";
-        for (int i = 0; i < times; ++i) string += character;
-        return string;
-    }
-
-    /**
-     * Converts '&' color code into '§'
-     *
-     * @param string: the string that should be converted.
-     *
-     * @return string: the converted string.
-     */
-    public String parseString(String string) {
-        return string.replace("&", "§");
-    }
-
-    /**
      * Gets a list of all potion effect types names.
      *
      * @return list: the list.
@@ -262,19 +149,4 @@ public class StringsUtil {
         return enums.stream().filter(Objects::nonNull).anyMatch(e -> e.toString().equalsIgnoreCase(enumName));
     }
 
-    /**
-     * Checks if a string is a double.
-     *
-     * @param string: the string.
-     *
-     * @return boolean: if the string is a double or not.
-     */
-    public static boolean isDouble(String string) {
-        try {
-            Double.parseDouble(string);
-            return true;
-        } catch (NumberFormatException ignored) {
-            return false;
-        }
-    }
 }

@@ -1,7 +1,8 @@
 package it.fulminazzo.sbcAPI;
 
+import it.fulminazzo.Utils.NumberUtil;
 import it.fulminazzo.sbc.StrippedBroadcast;
-import it.fulminazzo.sbc.Utils.StringsUtil;
+import it.fulminazzo.sbc.Utils.MessagesUtil;
 import net.milkbowl.vault.economy.Economy;
 import org.apache.commons.lang.StringUtils;
 import org.bukkit.Bukkit;
@@ -133,7 +134,7 @@ public class PlayersUtil {
     public static List<Player> getPlayersFromEffect(String effectName) {
         effectName = effectName.toLowerCase().startsWith("effect=") ? effectName.substring(7).toUpperCase() : effectName.toUpperCase();
         if (effectName.replace(" ", "").equalsIgnoreCase("")) return null;
-        if (!StringsUtil.isValidValue(new ArrayList<>(StringsUtil.getPotionEffects()), effectName)) return null;
+        if (!MessagesUtil.isValidValue(new ArrayList<>(MessagesUtil.getPotionEffects()), effectName)) return null;
         return getPlayersFromEffect(PotionEffectType.getByName(effectName.toUpperCase()));
     }
 
@@ -145,7 +146,7 @@ public class PlayersUtil {
      */
     public static List<Player> getPlayersFromEffect(String effectName, int level) {
         effectName = effectName.toLowerCase().startsWith("effect=") ? effectName.substring(7).toUpperCase() : effectName.toUpperCase();
-        if (!StringsUtil.isValidValue(new ArrayList<>(StringsUtil.getPotionEffects()), effectName)) return null;
+        if (!MessagesUtil.isValidValue(new ArrayList<>(MessagesUtil.getPotionEffects()), effectName)) return null;
         return getPlayersFromEffect(PotionEffectType.getByName(effectName.toUpperCase()), level);
     }
 
@@ -182,7 +183,7 @@ public class PlayersUtil {
             if (gmInt > 0 && gmInt < 4) return getPlayersFromGameMode(GameMode.values()[gmInt]);
             else return null;
         } else {
-            if (StringsUtil.isValidValue(GameMode.values(), gameModeString)) return getPlayersFromGameMode(GameMode.valueOf(gameModeString));
+            if (MessagesUtil.isValidValue(GameMode.values(), gameModeString)) return getPlayersFromGameMode(GameMode.valueOf(gameModeString));
             else return null;
         }
     }
@@ -205,7 +206,7 @@ public class PlayersUtil {
         if (!StrippedBroadcast.getPlugin(StrippedBroadcast.class).isVaultEnabled()) return null;
         money = money.toLowerCase().startsWith("money=") ? money.substring(6) : money;
         if (money.replace(" ", "").equalsIgnoreCase("")) return null;
-        if (!StringsUtil.isDouble(money) || Double.parseDouble(money) < 0) return null;
+        if (!NumberUtil.isDouble(money) || Double.parseDouble(money) < 0) return null;
         return getPlayersFromMoney(Double.parseDouble(money));
     }
 
@@ -247,7 +248,7 @@ public class PlayersUtil {
     public static List<Player> getPlayersFromItem(String itemName) {
         itemName = itemName.startsWith("item=") ? itemName.toUpperCase().substring(5) : itemName.toUpperCase();
         if (itemName.replace(" ", "").equalsIgnoreCase("")) return null;
-        if (!StringsUtil.isValidValue(Material.values(), itemName)) return null;
+        if (!MessagesUtil.isValidValue(Material.values(), itemName)) return null;
         return getPlayersFromItem(Material.valueOf(itemName));
     }
 
@@ -259,7 +260,7 @@ public class PlayersUtil {
     public static List<Player> getPlayersFromItem(String itemName, int amount) {
         itemName = itemName.startsWith("item=") ? itemName.toUpperCase().substring(5) : itemName.toUpperCase();
         if (itemName.replace(" ", "").equalsIgnoreCase("")) return null;
-        if (!StringsUtil.isValidValue(Material.values(), itemName)) return null;
+        if (!MessagesUtil.isValidValue(Material.values(), itemName)) return null;
         return getPlayersFromItem(Material.valueOf(itemName), amount);
     }
 

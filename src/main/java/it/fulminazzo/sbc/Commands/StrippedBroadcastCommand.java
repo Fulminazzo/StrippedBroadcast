@@ -1,7 +1,10 @@
 package it.fulminazzo.sbc.Commands;
 
+import it.fulminazzo.Utils.StringsUtil;
 import it.fulminazzo.sbc.StrippedBroadcast;
-import it.fulminazzo.sbc.Utils.StringsUtil;
+import it.fulminazzo.sbc.Utils.MessagesUtil;
+import it.fulminazzo.sbcAPI.PlayersUtil;
+import it.fulminazzo.sbcAPI.PlayersUtilB;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Material;
@@ -14,12 +17,14 @@ import org.bukkit.util.StringUtil;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class StrippedBroadcastCommand implements TabExecutor {
     private final StrippedBroadcast plugin;
+    private final MessagesUtil messagesUtil;
 
     /**
      * Constructor of the StrippedBroadcastCommand.
@@ -28,6 +33,7 @@ public class StrippedBroadcastCommand implements TabExecutor {
      */
     public StrippedBroadcastCommand(StrippedBroadcast plugin) {
         this.plugin = plugin;
+        messagesUtil = plugin.getStringsUtil();
     }
 
     /**
@@ -40,19 +46,18 @@ public class StrippedBroadcastCommand implements TabExecutor {
      * @param args: the command arguments.
      */
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        StringsUtil stringsUtil = plugin.getStringsUtil();
         Player player = (sender instanceof Player) ? (Player) sender : null;
         List<Player> players;
-        if (args.length == 0) {
-            sendHelpMessage(sender);
+        if (args.length == 0 || args[0].equalsIgnoreCase("[RAINBOW]")) {
+            issueNoMessageSupplied(player, PlayersUtil.getAllPlayers(), args.length > 0 && args[0].equalsIgnoreCase("[RAINBOW]"));
             return true;
         }
-        String[] possibleCommands = stringsUtil.getCommandsFromParenthesis(stringsUtil.getParsedMessage(args, false));
+        String[] possibleCommands = StringsUtil.getCommandsFromParenthesis(StringsUtil.getParsedMessage(args, false));
         if (possibleCommands.length == 0) {
-            players = stringsUtil.parseCommand(args[0], player);
+            players = messagesUtil.parseCommand(args[0], player);
         } else {
-            players = stringsUtil.parseCommands(possibleCommands[0], player);
-            args = stringsUtil.getParsedMessage(args, false).replace(possibleCommands[0], "").split(" ");
+            players = messagesUtil.parseCommands(possibleCommands[0], player);
+            args = StringsUtil.getParsedMessage(args, false).replace(possibleCommands[0], "").split(" ");
         }
         if (players == null) {
             sendHelpMessage(sender);
@@ -60,15 +65,16 @@ public class StrippedBroadcastCommand implements TabExecutor {
         }
         List<String> arrayList = new ArrayList<>();
         for (String s : args) if (!(s.equalsIgnoreCase(args[0]))) arrayList.add(s);
-        if (arrayList.isEmpty()) {
-            sendHelpMessage(sender);
+        if (arrayList.isEmpty() || (arrayList.size() == 1 && arrayList.get(0).equalsIgnoreCase("[RAINBOW]"))) {
+            issueNoMessageSupplied(sender, players, !arrayList.isEmpty() && arrayList.get(0).equalsIgnoreCase("[RAINBOW]"));
             return true;
         }
         if (!plugin.isLuckPermsEnabled() &&
-                (possibleCommands.length == 0 ? stringsUtil.getParsedMessage(args, false) : stringsUtil.getParsedMessage(possibleCommands, false)).contains("group="))
-            sender.sendMessage(stringsUtil.parseString(String.format("&e%s &8» &cThe keyword \"group=\" was detected, but LuckPerms was not found.", plugin.getName())));
+                (possibleCommands.length == 0 ? StringsUtil.getParsedMessage(args, false) :
+                        StringsUtil.getParsedMessage(possibleCommands, false)).contains("group="))
+            sender.sendMessage(getMessage("&e%s &8» &cThe keyword \"group=\" was detected, but LuckPerms was not found."));
         if (players.isEmpty())
-            sender.sendMessage(stringsUtil.parseString(String.format("&e%s &8» &cNo player was found after executing the command. Are you sure you put valid values?", plugin.getName())));
+            sender.sendMessage(getMessage("&e%s &8» &cNo player was found after executing the command. Are you sure you put valid values?"));
         StrippedBroadcast.sendStrippedBroadcast(players, arrayList);
         return true;
     }
@@ -86,32 +92,33 @@ public class StrippedBroadcastCommand implements TabExecutor {
      * @return list: the list of inputs.
      */
     public List<String> onTabComplete(CommandSender sender, Command command, String label, String[] args) {
-        StringsUtil stringsUtil = plugin.getStringsUtil();
         Player player = (sender instanceof Player) ? (Player) sender : null;
         List<String> list = new ArrayList<>();
-        String[] possibleCommands = stringsUtil.getCommandsFromParenthesis(stringsUtil.getParsedMessage(args, false));
-        if (args.length == 1 || (possibleCommands.length == 0 && stringsUtil.parseCommand(args[0], player) == null)) {
-            String arguments = stringsUtil.getParsedMessage(args, false);
-            if (stringsUtil.isOpenParenthesis(arguments) != 0) {
-                String lastInput = stringsUtil.removeParenthesis(args[args.length - 1]);
-                if (args.length != 1 && lastInput.equalsIgnoreCase("")) lastInput = stringsUtil.removeParenthesis(args[args.length - 2]);
+        String[] possibleCommands = StringsUtil.getCommandsFromParenthesis(StringsUtil.getParsedMessage(args, false));
+        if (args.length == 1 || (possibleCommands.length == 0 && messagesUtil.parseCommand(args[0], player) == null)) {
+            String arguments = StringsUtil.getParsedMessage(args, false);
+            if (StringsUtil.isOpenParenthesis(arguments) != 0) {
+                String lastInput = StringsUtil.removeParenthesis(args[args.length - 1]);
+                if (args.length != 1 && lastInput.equalsIgnoreCase("")) lastInput = StringsUtil.removeParenthesis(args[args.length - 2]);
                 // Since Bukkit is able to detect an online player just by his initial,
                 // the player part of this code makes sure that the sender will receive the whole player name.
-                if (stringsUtil.parseCommand(lastInput, player) != null && !lastInput.endsWith("=") && (Bukkit.getPlayer(lastInput.replace("player=", "")) == null ||
-                                Bukkit.getPlayer(lastInput.replace("player=", "")).getName().equalsIgnoreCase(lastInput.replace("player=", "")))) {
+                if (messagesUtil.parseCommand(lastInput, player) != null && !lastInput.endsWith("=") && (Bukkit.getPlayer(
+                        lastInput.replace("player=", "")) == null ||
+                                Bukkit.getPlayer(lastInput.replace("player=", "")).getName().equalsIgnoreCase(
+                                        lastInput.replace("player=", "")))) {
                     list.add("&&");
                     list.add("||");
                 } else {
                     for (String s : getInputOptions(lastInput))
                         list.add((args[args.length - 1].startsWith("(") ? args[args.length - 1].replace(lastInput, "") : "") +
-                                s + (s.toLowerCase().endsWith("=") ? "" : stringsUtil.repeat(')', stringsUtil.isOpenParenthesis(arguments))));
+                                s + (s.toLowerCase().endsWith("=") ? "" : StringsUtil.repeat(')', StringsUtil.isOpenParenthesis(arguments))));
                 }
             } else {
                 list = getInputOptions(args[0]);
             }
         } else {
             if (possibleCommands.length != 0) {
-                args = stringsUtil.getParsedMessage(args, false).replace(possibleCommands[0], "").split(" ");
+                args = StringsUtil.getParsedMessage(args, false).replace(possibleCommands[0], "").split(" ");
                 if (args.length == 1) {
                     args = Arrays.copyOf(args, 2);
                     args[1] = "";
@@ -122,9 +129,32 @@ public class StrippedBroadcastCommand implements TabExecutor {
                 list.add("<message>");
             }
             if (args.length >= 2) list.addAll(plugin.getHexColorsUtil().getFormattedHexList(
-                    plugin.getStringsUtil().getParsedMessage(Arrays.asList(Arrays.copyOfRange(args, args.length - 1, args.length)), false)));
+                    StringsUtil.getParsedMessage(Arrays.asList(Arrays.copyOfRange(args, args.length - 1, args.length)), false)));
         }
         return StringUtil.copyPartialMatches(args[args.length-1], list, new ArrayList<>());
+    }
+
+    /**
+     * Handles when a sender specifies the users, but does not specify
+     * any message.
+     *
+     * @param sender: the sender.
+     * @param players: the players supplied.
+     * @param rainbow: check if the message starts with "[RAINBOW]"
+     */
+    private void issueNoMessageSupplied(CommandSender sender, List<Player> players, Boolean rainbow) {
+        Player player = (sender instanceof Player) ? (Player) sender : null;
+        if (player == null) sendHelpMessage(sender);
+        else {
+            plugin.flipPlayerBroadcasting(player, players);
+            String message;
+            if (plugin.isPlayerBroadcasting(player)) {
+                message = "&e%s &8» &aNow your messages will be broadcasted to the specified players.";
+                if (rainbow && !plugin.isRainbowBroadcast(player)) plugin.flipRainbowBroadcast(player);
+            } else
+                message = "&e%s &8» &cYou are not broadcasting anymore.";
+            player.sendMessage(getMessage(message));
+        }
     }
 
     /**
@@ -136,7 +166,8 @@ public class StrippedBroadcastCommand implements TabExecutor {
      */
     public List<String> getInputOptions(String input) {
         input = input.toLowerCase();
-        List<String> list = Bukkit.getOnlinePlayers().stream().map(HumanEntity::getName).collect(Collectors.toList());
+        Collection<? extends Player> players = Bukkit.getOnlinePlayers();
+        List<String> list = players.stream().map(HumanEntity::getName).collect(Collectors.toList());
         list.add("all");
         list.add("perm=");
         if (plugin.isLuckPermsEnabled()) list.add("group=");
@@ -147,7 +178,7 @@ public class StrippedBroadcastCommand implements TabExecutor {
         list.add("gamemode=");
         if (plugin.isVaultEnabled()) list.add("money=");
         if (input.startsWith("world=")) list.addAll(Bukkit.getWorlds().stream().map(world -> "world=" + world.getName()).collect(Collectors.toList()));
-        if (input.startsWith("player=")) list.addAll(Bukkit.getOnlinePlayers().stream().map(player -> "player=" + player.getName()).collect(Collectors.toList()));
+        if (input.startsWith("player=")) list.addAll(players.stream().map(player -> "player=" + player.getName()).collect(Collectors.toList()));
         if (input.startsWith("perm=")) {
             list.add("perm=op");
             list.addAll(Bukkit.getPluginManager().getPermissions().stream().map(permission -> "perm=" + permission.getName()).collect(Collectors.toList()));
@@ -168,7 +199,7 @@ public class StrippedBroadcastCommand implements TabExecutor {
             if (input.contains(",")) {
                 String finalInput = input;
                 list.addAll(Arrays.stream(new int[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 0}).mapToObj(i -> finalInput + i).collect(Collectors.toList()));
-            } else list.addAll(StringsUtil.getPotionEffects().stream().map(p -> "effect=" + p).collect(Collectors.toList()));
+            } else list.addAll(MessagesUtil.getPotionEffects().stream().map(p -> "effect=" + p).collect(Collectors.toList()));
         }
         if (input.startsWith("gamemode=")) {
             list.addAll(Stream.concat(
@@ -185,8 +216,18 @@ public class StrippedBroadcastCommand implements TabExecutor {
      * @param sender: the command sender.
      */
     private void sendHelpMessage(CommandSender sender) {
+        sender.sendMessage(getMessage("&e%s &8» &cUsage: /%s (syntax)/<player>/world=<world>/perm=<permission>/me/all <message>"));
+    }
+
+    /**
+     * Sends a message with the plugin prefix.
+     *
+     * @param message: the message.
+     *
+     * @return the parsed message.
+     */
+    private String getMessage(String message) {
         String pluginName = plugin.getName();
-        sender.sendMessage(plugin.getStringsUtil().parseString(
-                String.format("&e%s &8» &cUsage: /%s (syntax)/<player>/world=<world>/perm=<permission>/me/all <message>", pluginName, pluginName.toLowerCase())));
+        return StringsUtil.parseString(String.format(message, pluginName, pluginName.toLowerCase()));
     }
 }

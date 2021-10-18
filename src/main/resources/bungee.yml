@@ -1,0 +1,10 @@
+name: StrippedBroadcastB
+author: Fulminazzo
+version: '${project.version}'
+description: StrippedBroadcast is an advanced recreation of the plugin RawMsg that adds more functionalities to the command.
+main: it.fulminazzo.sbcb.StrippedBroadcastBungee
+softdepends: [LuckPermsBungee]
+
+permissions:
+  sbcb.main:
+    description: Permission for /sbc
