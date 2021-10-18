@@ -7,7 +7,7 @@ It also has an API available for any developer to be used.
 ## Commands
 
 The main and only command of StrippedBroadcast is, you guessed it, /sbc (short for /simplebroadcast). Its syntax is: <br />
-- /simplebroadcast &lt;targets&gt; &lt;message&gt;
+- /strippedbroadcast &lt;targets&gt; &lt;message&gt;
 
 As explained by the Plugin itself when trying to execute the command, the first argument should represent the targets of the broadcast. These could be:
 - all, for every player online in the server
