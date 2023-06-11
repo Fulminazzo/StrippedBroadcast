@@ -1,6 +1,6 @@
 package it.fulminazzo.sbcAPI;
 
-import it.fulminazzo.Utils.NumberUtil;
+import it.angrybear.Utils.NumberUtils;
 import it.fulminazzo.sbc.StrippedBroadcast;
 import it.fulminazzo.sbc.Utils.MessagesUtil;
 import net.milkbowl.vault.economy.Economy;
@@ -206,7 +206,7 @@ public class PlayersUtil {
         if (!StrippedBroadcast.getPlugin(StrippedBroadcast.class).isVaultEnabled()) return null;
         money = money.toLowerCase().startsWith("money=") ? money.substring(6) : money;
         if (money.replace(" ", "").equalsIgnoreCase("")) return null;
-        if (!NumberUtil.isDouble(money) || Double.parseDouble(money) < 0) return null;
+        if (!NumberUtils.isDouble(money) || Double.parseDouble(money) < 0) return null;
         return getPlayersFromMoney(Double.parseDouble(money));
     }
 

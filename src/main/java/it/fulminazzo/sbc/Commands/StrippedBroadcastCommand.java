@@ -1,10 +1,10 @@
 package it.fulminazzo.sbc.Commands;
 
 import it.fulminazzo.Utils.StringsUtil;
+import it.fulminazzo.sbc.Enums.MessageType;
 import it.fulminazzo.sbc.StrippedBroadcast;
 import it.fulminazzo.sbc.Utils.MessagesUtil;
 import it.fulminazzo.sbcAPI.PlayersUtil;
-import it.fulminazzo.sbcAPI.PlayersUtilB;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Material;
@@ -25,6 +25,7 @@ import java.util.stream.Stream;
 public class StrippedBroadcastCommand implements TabExecutor {
     private final StrippedBroadcast plugin;
     private final MessagesUtil messagesUtil;
+    private final List<String> modes = Arrays.stream(MessageType.values()).map(Enum::name).map(String::toLowerCase).collect(Collectors.toList());
 
     /**
      * Constructor of the StrippedBroadcastCommand.
@@ -48,8 +49,10 @@ public class StrippedBroadcastCommand implements TabExecutor {
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         Player player = (sender instanceof Player) ? (Player) sender : null;
         List<Player> players;
+        MessageType messageType = MessageType.MESSAGE;
         if (args.length == 0 || args[0].equalsIgnoreCase("[RAINBOW]")) {
-            issueNoMessageSupplied(player, PlayersUtil.getAllPlayers(), args.length > 0 && args[0].equalsIgnoreCase("[RAINBOW]"));
+            issueNoMessageSupplied(sender, PlayersUtil.getAllPlayers(), messageType,
+                    args.length > 0 && args[0].equalsIgnoreCase("[RAINBOW]"));
             return true;
         }
         String[] possibleCommands = StringsUtil.getCommandsFromParenthesis(StringsUtil.getParsedMessage(args, false));
@@ -65,8 +68,15 @@ public class StrippedBroadcastCommand implements TabExecutor {
         }
         List<String> arrayList = new ArrayList<>();
         for (String s : args) if (!(s.equalsIgnoreCase(args[0]))) arrayList.add(s);
-        if (arrayList.isEmpty() || (arrayList.size() == 1 && arrayList.get(0).equalsIgnoreCase("[RAINBOW]"))) {
-            issueNoMessageSupplied(sender, players, !arrayList.isEmpty() && arrayList.get(0).equalsIgnoreCase("[RAINBOW]"));
+        String firstElem = arrayList.isEmpty() ? "" : arrayList.get(0);
+        if (modes.contains(firstElem.toLowerCase())) {
+            arrayList.remove(0);
+            messageType = MessageType.valueOf(firstElem.toUpperCase());
+            firstElem = arrayList.isEmpty() ? "" : arrayList.get(0);
+        }
+        boolean isRainbow = !arrayList.isEmpty() && firstElem.equalsIgnoreCase("[RAINBOW]");
+        if (arrayList.isEmpty() || (arrayList.size() == 1 && isRainbow)) {
+            issueNoMessageSupplied(sender, players, messageType, isRainbow);
             return true;
         }
         if (!plugin.isLuckPermsEnabled() &&
@@ -75,7 +85,7 @@ public class StrippedBroadcastCommand implements TabExecutor {
             sender.sendMessage(getMessage("&e%s &8» &cThe keyword \"group=\" was detected, but LuckPerms was not found."));
         if (players.isEmpty())
             sender.sendMessage(getMessage("&e%s &8» &cNo player was found after executing the command. Are you sure you put valid values?"));
-        StrippedBroadcast.sendStrippedBroadcast(players, arrayList);
+        StrippedBroadcast.sendStrippedBroadcast(players, messageType, arrayList);
         return true;
     }
 
@@ -127,9 +137,17 @@ public class StrippedBroadcastCommand implements TabExecutor {
             if (args.length == 2) {
                 if (args[1].startsWith("[")) list.add("[RAINBOW]");
                 list.add("<message>");
+                list.addAll(modes);
             }
-            if (args.length >= 2) list.addAll(plugin.getHexColorsUtil().getFormattedHexList(
-                    StringsUtil.getParsedMessage(Arrays.asList(Arrays.copyOfRange(args, args.length - 1, args.length)), false)));
+            if (args.length == 3 && modes.contains(args[1].toLowerCase())) {
+                if (args[2].startsWith("[")) list.add("[RAINBOW]");
+                list.add("<message>");
+            }
+            if (args.length >= 2) {
+                list.addAll(plugin.getHexColorsUtil().getFormattedHexList(
+                        StringsUtil.getParsedMessage(Arrays.asList(Arrays.copyOfRange(args, args.length - 1, args.length)),
+                                false)));
+            }
         }
         return StringUtil.copyPartialMatches(args[args.length-1], list, new ArrayList<>());
     }
@@ -140,17 +158,17 @@ public class StrippedBroadcastCommand implements TabExecutor {
      *
      * @param sender: the sender.
      * @param players: the players supplied.
+     * @param messageType: the type of the message.
      * @param rainbow: check if the message starts with "[RAINBOW]"
      */
-    private void issueNoMessageSupplied(CommandSender sender, List<Player> players, Boolean rainbow) {
+    private void issueNoMessageSupplied(CommandSender sender, List<Player> players, MessageType messageType, Boolean rainbow) {
         Player player = (sender instanceof Player) ? (Player) sender : null;
         if (player == null) sendHelpMessage(sender);
         else {
-            plugin.flipPlayerBroadcasting(player, players);
+            plugin.flipPlayerBroadcasting(player, players, messageType, rainbow);
             String message;
             if (plugin.isPlayerBroadcasting(player)) {
                 message = "&e%s &8» &aNow your messages will be broadcasted to the specified players.";
-                if (rainbow && !plugin.isRainbowBroadcast(player)) plugin.flipRainbowBroadcast(player);
             } else
                 message = "&e%s &8» &cYou are not broadcasting anymore.";
             player.sendMessage(getMessage(message));

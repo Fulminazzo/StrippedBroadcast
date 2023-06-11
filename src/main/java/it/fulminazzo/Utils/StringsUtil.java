@@ -77,7 +77,7 @@ public class StringsUtil {
     public static String getParsedMessage(List<String> list, Boolean parseChatColor) {
         String message = "";
         for (String string : list) message += (parseChatColor ? parseString(string) : string) + " ";
-        return message.substring(0, message.length() - 1);
+        return message.substring(0, Math.max(0, message.length() - 1));
     }
 
     /**

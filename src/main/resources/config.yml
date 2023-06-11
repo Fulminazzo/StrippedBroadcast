@@ -1,0 +1,19 @@
+#################################################################
+#               StrippedBroadcast config.yml file               #
+#################################################################
+
+# The following section defines a list of titles to be shown to
+# the player in certain situations.
+titles:
+  first-join:
+    title: "Example Title"
+    subtitle: "Example SubTitle"
+  join: {}
+  quit: {}
+
+# The following section defines a list of titles to be shown to
+# the player in certain situations.
+action-bars:
+  first-join: {}
+  join: {}
+  quit: {}

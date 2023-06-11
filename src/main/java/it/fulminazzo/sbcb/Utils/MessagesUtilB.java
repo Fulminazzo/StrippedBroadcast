@@ -1,7 +1,7 @@
 package it.fulminazzo.sbcb.Utils;
 
 
-import it.fulminazzo.Utils.NumberUtil;
+import it.angrybear.Utils.NumberUtils;
 import it.fulminazzo.Utils.StringsUtil;
 import it.fulminazzo.sbcAPI.PlayersUtilB;
 import net.md_5.bungee.api.ProxyServer;
@@ -51,7 +51,7 @@ public class MessagesUtilB {
         for (Object[] cmds : commands) {
             String cmd = ((String) cmds[0]).replace(" ", "");
             Boolean isAnd = (Boolean) cmds[1];
-            List<ProxiedPlayer> commandPlayers = NumberUtil.isNumeric(cmd) ?
+            List<ProxiedPlayer> commandPlayers = NumberUtils.isInteger(cmd) ?
                     parseCommands(subCommands.get(Integer.parseInt(cmd)), player) : parseCommand(cmd, player);
             if (commandPlayers == null) {
                 errors.add(cmd);

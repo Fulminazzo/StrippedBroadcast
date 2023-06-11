@@ -89,15 +89,24 @@ public class StrippedBroadcastBungee extends Plugin {
      * @param message: the string containing the message.
      */
     public static void sendStrippedBroadcast(List<ProxiedPlayer> players, String message) {
+        if (message.contains("\n")) {
+            List<ProxiedPlayer> finalPlayers = players;
+            Arrays.stream(message.replace("\n", "\n ").split("\n")).forEach(m -> sendStrippedBroadcast(finalPlayers, m));
+            return;
+        }
         message = StringsUtil.parseString(message.replace("  ", " "));
 
         if (ChatColor.stripColor(message).replace(" ", "").equalsIgnoreCase("")) return;
-        TextComponent finalMessage = messagesUtilB.parseTextComponent(message);
-        ProxyServer.getInstance().getConsole().sendMessage(finalMessage);
-        for (ProxiedPlayer p : players) p.sendMessage(finalMessage);
 
         StrippedBroadcastEventB event = new StrippedBroadcastEventB(players, message);
         ProxyServer.getInstance().getPluginManager().callEvent(event);
+        if (event.isCancelled()) return;
+        message = event.getMessage();
+        players = event.getPlayers();
+
+        TextComponent finalMessage = messagesUtilB.parseTextComponent(message);
+        ProxyServer.getInstance().getConsole().sendMessage(finalMessage);
+        for (ProxiedPlayer p : players) p.sendMessage(finalMessage);
     }
 
     /**

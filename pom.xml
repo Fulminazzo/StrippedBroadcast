@@ -6,10 +6,8 @@
 
     <groupId>it.fulminazzo</groupId>
     <artifactId>StrippedBroadcast</artifactId>
-    <version>3.0</version>
+    <version>4.0</version>
     <packaging>jar</packaging>
-
-    <name>StrippedBroadcast</name>
 
     <properties>
         <java.version>1.8</java.version>
@@ -30,7 +28,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
-                <version>3.2.4</version>
+                <version>3.4.1</version>
                 <executions>
                     <execution>
                         <phase>package</phase>
@@ -39,14 +37,28 @@
                         </goals>
                         <configuration>
                             <createDependencyReducedPom>false</createDependencyReducedPom>
+                            <minimizeJar>true</minimizeJar>
                             <filters>
                                 <filter>
-                                    <artifact>it.fulminazzo:*</artifact>
-                                    <excludes>
-                                        <exclude>META-INF/*.MF</exclude>
-                                    </excludes>
+                                    <artifact>it.angrybear:BearCommands</artifact>
+                                    <includes>
+                                        <include>it/angrybear/Utils/*.class</include>
+                                        <include>it/angrybear/Objects/ReflObject.class</include>
+                                        <include>it/angrybear/Objects/Reflections/NMSReflObject.class</include>
+                                        <include>it/angrybear/Objects/Reflections/CraftReflObject.class</include>
+                                    </includes>
                                 </filter>
                             </filters>
+                            <relocations>
+                                <relocation>
+                                    <pattern>it.angrybear.Utils</pattern>
+                                    <shadedPattern>it.fulminazzo.Utils</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>it.angrybear.Objects</pattern>
+                                    <shadedPattern>it.fulminazzo.Utils</shadedPattern>
+                                </relocation>
+                            </relocations>
                         </configuration>
                     </execution>
                 </executions>
@@ -70,12 +82,12 @@
             <url>https://oss.sonatype.org/content/repositories/snapshots</url>
         </repository>
         <repository>
-            <id>hex-colors-util-repo</id>
-            <url>file:///${project.basedir}/libs</url>
-        </repository>
-        <repository>
             <id>jitpack.io</id>
             <url>https://jitpack.io</url>
+        </repository>
+        <repository>
+            <id>localrepo</id>
+            <url>file:///${project.basedir}/libs</url>
         </repository>
     </repositories>
 
@@ -83,19 +95,19 @@
         <dependency>
             <groupId>org.spigotmc</groupId>
             <artifactId>spigot-api</artifactId>
-            <version>1.17.1-R0.1-SNAPSHOT</version>
+            <version>1.13.2-R0.1-SNAPSHOT</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>it.fulminazzo</groupId>
-            <artifactId>HexColorsUtil</artifactId>
-            <version>1.0</version>
-            <scope>compile</scope>
+            <groupId>net.md-5</groupId>
+            <artifactId>bungeecord-api</artifactId>
+            <version>1.19-R0.1-SNAPSHOT</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>net.luckperms</groupId>
             <artifactId>api</artifactId>
-            <version>5.3</version>
+            <version>5.4</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -105,10 +117,16 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>net.md-5</groupId>
-            <artifactId>bungeecord-api</artifactId>
-            <version>1.17-R0.1-SNAPSHOT</version>
-            <scope>provided</scope>
+            <groupId>it.fulminazzo</groupId>
+            <artifactId>HexColorsUtil</artifactId>
+            <version>1.0</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>it.angrybear</groupId>
+            <artifactId>BearCommands</artifactId>
+            <version>5.1</version>
+            <scope>compile</scope>
         </dependency>
     </dependencies>
 </project>
